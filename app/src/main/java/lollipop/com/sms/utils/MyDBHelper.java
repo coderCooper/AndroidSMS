@@ -61,7 +61,18 @@ public class MyDBHelper extends SQLiteOpenHelper{
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+
+        // 版本1加入
         db.execSQL("create table " + DbName + "(id integer primary key autoincrement, " +
+                name + " varchar(20), " +
+                phone + " varchar(11), " +
+                time + " long, " +
+                type + " int(1), " +
+                content + " varchar) ");
+
+
+        // 版本2加入
+        db.execSQL("create table " + DbUserName + "(id integer primary key autoincrement, " +
                 name + " varchar(20), " +
                 phone + " varchar(11), " +
                 time + " long, " +
