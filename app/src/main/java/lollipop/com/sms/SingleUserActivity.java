@@ -109,9 +109,9 @@ public class SingleUserActivity extends BaseActivity {
             allsms.clear();
         }
 
-        SmsFatherModel model = new DataBaseHelper(this).getAllSmsWithPhone(phone);
+        ArrayList<SmsModel> smsModels = new DataBaseHelper(this).getAllSmsWithPhone(phone);
 
-        allsms.addAll(model.getSms());
+        allsms.addAll(smsModels);
 
         if (allsms != null){
             setAdapter();
@@ -126,7 +126,7 @@ public class SingleUserActivity extends BaseActivity {
         } else {
             adapter.notifyDataSetChanged();
         }
-        mListView.setSelection(adapter.getCount()-1);
+        mListView.setSelection(adapter.getCount() - 1);
     }
 
     private void send() {

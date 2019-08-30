@@ -156,6 +156,14 @@ public class DataBaseHelper {
 //    }
 
 
+    public void updateRead(String phone){
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(MyDBHelper.type, 2);
+        db.update(MyDBHelper.DbUserName,values,"phone=?", new String[]{phone});
+        db.close();
+    }
+
     /**
      * 添加一条记录
      * @param name 联系人姓名
@@ -164,6 +172,8 @@ public class DataBaseHelper {
      */
     public long insert(String name, String phone, long time, boolean send, String content){
         SQLiteDatabase db = helper.getWritableDatabase();
+
+        // 更新短信表
         ContentValues values = new ContentValues();
         values.put(MyDBHelper.name, name);
         values.put(MyDBHelper.phone, phone);
@@ -172,37 +182,38 @@ public class DataBaseHelper {
         values.put(MyDBHelper.type, send ? 1 : 2);
         //内部是组拼sql语句实现的.
         long rowid = db.insert(MyDBHelper.DbName, null, values);
+
+        // 更新短信用户表
+        values = new ContentValues();
+        values.put(MyDBHelper.name, name);
+        values.put(MyDBHelper.phone, phone);
+        values.put(MyDBHelper.content, content);
+        values.put(MyDBHelper.time, time);
+        values.put(MyDBHelper.type, send ? 2 : 1);
+
+        Cursor cursor = db.rawQuery("select * from " + MyDBHelper.DbUserName +" where "+ MyDBHelper.phone +"=?", new String[]{phone});
+        if (cursor != null && cursor.getCount() > 0) {  // 表示存在，更新
+            db.update(MyDBHelper.DbUserName,values,"phone=?", new String[]{phone});
+        } else {
+            db.insert(MyDBHelper.DbUserName, null, values);
+        }
+
         //记得释放数据库资源
         db.close();
         return rowid;
     }
 
-    public SmsFatherModel getAllSmsWithPhone(String phone){
+    public ArrayList<SmsModel> getAllSmsWithPhone(String phone){
 
-        SQLiteDatabase db = helper.getWritableDatabase();
-
-        Cursor  cursor = db.rawQuery("select * from " + MyDBHelper.DbName +" where "+ MyDBHelper.phone +"=?", new String[]{phone});
-
-        ArrayList<SmsFatherModel> sms = handleWithCursor(db, cursor);
-
-        if (sms != null){
-            return sms.get(0);
-        }
-
-        return null;
-    }
-
-    public ArrayList<SmsFatherModel> getAllSms(){
         SQLiteDatabase db = helper.getReadableDatabase();
-        Cursor  cursor =  db.query(MyDBHelper.DbName, null, null, null, null, null, null);
-        return handleWithCursor(db, cursor);
-    }
 
-    private ArrayList<SmsFatherModel> handleWithCursor(SQLiteDatabase db, Cursor  cursor){
+        Cursor cursor = db.rawQuery("select * from " + MyDBHelper.DbName +" where "+ MyDBHelper.phone +"=?", new String[]{phone});
+
         if (cursor == null || !cursor.moveToFirst()) {
             return null;
         }
-        HashMap<String, SmsFatherModel> allSms = new HashMap<>();
+
+        ArrayList<SmsModel> smsModels = new ArrayList<>();
 
         SmsModel model;
         do {
@@ -212,24 +223,38 @@ public class DataBaseHelper {
             model.setContent(cursor.getString(cursor.getColumnIndex(MyDBHelper.content)));
             model.setTime(Utils.formatDateTime(cursor.getLong(cursor.getColumnIndex(MyDBHelper.time))));
             model.setSend(cursor.getInt(cursor.getColumnIndex(MyDBHelper.type)) == 1);
-
-            SmsFatherModel fatherModel = allSms.get(model.getPhone());
-
-            if (fatherModel == null){
-                fatherModel = new SmsFatherModel();
-                fatherModel.setSms(new ArrayList<SmsModel>());
-                allSms.put(model.getPhone(), fatherModel);
-            }
-            if (!TextUtils.isEmpty(model.getName())){
-                fatherModel.setName(model.getName());
-            }
-
-            fatherModel.getSms().add(model);
+            smsModels.add(model);
 
         } while (cursor.moveToNext());
         cursor.close();//关闭掉游标,释放资源
         db.close();//关闭数据库,释放资源
 
-        return new ArrayList<>(allSms.values());
+        return smsModels;
+    }
+
+    public ArrayList<SmsFatherModel> getAllSms(){
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor  cursor =  db.query(MyDBHelper.DbUserName, null, null, null, null, null, " time desc");
+
+        if (cursor == null || !cursor.moveToFirst()) {
+            return null;
+        }
+
+        ArrayList<SmsFatherModel> fatherModels = new ArrayList<>();
+
+        SmsFatherModel model;
+        do {
+            model = new SmsFatherModel();
+            model.setName(cursor.getString(cursor.getColumnIndex(MyDBHelper.name)));
+            model.setPhone(cursor.getString(cursor.getColumnIndex(MyDBHelper.phone)));
+            model.setContent(cursor.getString(cursor.getColumnIndex(MyDBHelper.content)));
+            model.setTime(Utils.formatDateTime(cursor.getLong(cursor.getColumnIndex(MyDBHelper.time))));
+            model.setUnRead(cursor.getInt(cursor.getColumnIndex(MyDBHelper.type)) == 1);
+            fatherModels.add(model);
+        } while (cursor.moveToNext());
+        cursor.close();//关闭掉游标,释放资源
+        db.close();//关闭数据库,释放资源
+
+        return fatherModels;
     }
 }

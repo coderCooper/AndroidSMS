@@ -16,12 +16,12 @@ import lollipop.com.sms.R;
  * Created by lollipop on 2018/11/6.
  */
 
-public class AddressAdapter extends BaseAdapter {
+public class SmsUserAdapter extends BaseAdapter {
 
     private Context mCon;
     private ArrayList<SmsFatherModel> smsBeans;
 
-    public AddressAdapter(Context mCon, ArrayList<SmsFatherModel> smsBeans){
+    public SmsUserAdapter(Context mCon, ArrayList<SmsFatherModel> smsBeans){
         this.mCon = mCon;
         this.smsBeans = smsBeans;
     }
@@ -48,6 +48,7 @@ public class AddressAdapter extends BaseAdapter {
         TextView name;      // 姓名
         TextView content;       // 详细内容
         TextView time;       // 详细内容
+        View readPoint;       // 是否已读
     }
 
     @Override
@@ -59,28 +60,30 @@ public class AddressAdapter extends BaseAdapter {
             holder.name = ((TextView) convertView.findViewById(R.id.tv00));
             holder.content = ((TextView) convertView.findViewById(R.id.tv01));
             holder.time = ((TextView) convertView.findViewById(R.id.tv02));
+            holder.readPoint = convertView.findViewById(R.id.view0);
             convertView.setTag(holder);
         } else {
             holder = ((ViewHolder) convertView.getTag());
         }
-        final SmsFatherModel bean = smsBeans.get(position);
-        holder.name.setText(bean.getName());
 
-        ArrayList<SmsModel> sms = bean.getSms();
-        if (sms != null && sms.size() > 0){
-            SmsModel model = sms.get(sms.size() - 1);
-            holder.content.setText(model.getContent());
-            holder.time.setText(model.getTime());
-            if (TextUtils.isEmpty(bean.getName())){
-                if (TextUtils.isEmpty(model.getName())){
-                    holder.name.setText(model.getPhone());
-                } else {
-                    holder.name.setText(model.getName());
-                }
-            }
+        SmsFatherModel model = smsBeans.get(position);
+
+        if (TextUtils.isEmpty(model.getName())){
+            holder.name.setText(model.getPhone());
         } else {
-            holder.content.setText(null);
+            holder.name.setText(model.getName());
         }
+        if (model.isUnRead()){
+            holder.readPoint.setVisibility(View.VISIBLE);
+            holder.content.setTextColor(mCon.getResources().getColor(R.color.color666666));
+        } else {
+            holder.readPoint.setVisibility(View.INVISIBLE);
+            holder.content.setTextColor(mCon.getResources().getColor(R.color.color999999));
+        }
+
+        holder.content.setText(model.getContent());
+
+        holder.time.setText(model.getTime());
 
         return convertView;
     }

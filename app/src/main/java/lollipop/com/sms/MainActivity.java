@@ -12,18 +12,19 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
-import lollipop.com.sms.adapter.AddressAdapter;
+import lollipop.com.sms.adapter.SmsUserAdapter;
 import lollipop.com.sms.adapter.SmsFatherModel;
-import lollipop.com.sms.adapter.SmsModel;
 import lollipop.com.sms.utils.DataBaseHelper;
 
 public class MainActivity extends BaseActivity {
@@ -32,7 +33,7 @@ public class MainActivity extends BaseActivity {
 
     private ListView mListView;
 
-    private AddressAdapter adapter;
+    private SmsUserAdapter adapter;
 
     private ArrayList<SmsFatherModel> allsms;
 
@@ -88,16 +89,26 @@ public class MainActivity extends BaseActivity {
 
                 SmsFatherModel smsFatherModel = allsms.get(position);
 
-                SmsModel model = smsFatherModel.getSms().get(0);
-
                 Intent intent = new Intent(MainActivity.this, SingleUserActivity.class);
 
-                intent.putExtra("phone", model.getPhone());
+                intent.putExtra("phone", smsFatherModel.getPhone());
 
                 startActivity(intent);
 
+                new DataBaseHelper(MainActivity.this).updateRead(smsFatherModel.getPhone());
+
             }
         });
+
+        TextView bomTv = new TextView(this);
+        bomTv.setText("--没有更多东西哦--");
+        bomTv.setTextColor(getResources().getColor(R.color.color666666));
+        bomTv.setTextSize(13);
+        bomTv.setGravity(Gravity.CENTER);
+        bomTv.setLayoutParams(new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 256));
+
+        mListView.addFooterView(bomTv);
+
     }
 
     private void initData(){
@@ -118,7 +129,7 @@ public class MainActivity extends BaseActivity {
 
     public void setAdapter() {
         if (adapter == null){
-            adapter = new AddressAdapter(this, allsms);
+            adapter = new SmsUserAdapter(this, allsms);
             mListView.setAdapter(adapter);
         } else {
             adapter.notifyDataSetChanged();

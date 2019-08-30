@@ -1,8 +1,17 @@
 package lollipop.com.sms.utils;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.text.TextUtils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import lollipop.com.sms.adapter.SmsFatherModel;
+import lollipop.com.sms.adapter.SmsModel;
 
 /**
  * 数据库Helper类，必须继承自 SQLiteOpenHelper
@@ -24,7 +33,10 @@ public class MyDBHelper extends SQLiteOpenHelper{
     public static final String phone = "phone";
     public static final String content = "content";
     public static final String time = "time";
-    public static final String type = "type";       // 1: 本人发送，2:接受
+    public static final String type = "type";       // DbName表中 --> 1: 本人发送，2:接受   DbUserName表中 --> 1: 未读，2:已读
+
+
+    public static final String DbUserName = "smsUserInfo";
 
     public MyDBHelper(Context context) {
         /**
@@ -35,7 +47,7 @@ public class MyDBHelper extends SQLiteOpenHelper{
          * 第三个参数：null代表的是默认的游标工厂
          * 第四个参数：是数据库的版本号  数据库只能升级,不能降级,版本号只能变大不能变小
          */
-        super(context, "sms.db", null, 1);
+        super(context, "sms.db", null, 2);
     }
 
 
@@ -49,12 +61,12 @@ public class MyDBHelper extends SQLiteOpenHelper{
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table smsInfo (id integer primary key autoincrement, " +
-                "name varchar(20), " +
-                "phone varchar(11), " +
-                "time long, " +
-                "type int(1), " +
-                "content varchar) ");
+        db.execSQL("create table " + DbName + "(id integer primary key autoincrement, " +
+                name + " varchar(20), " +
+                phone + " varchar(11), " +
+                time + " long, " +
+                type + " int(1), " +
+                content + " varchar) ");
     }
 
 
@@ -68,6 +80,48 @@ public class MyDBHelper extends SQLiteOpenHelper{
      */
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion == 1 && 2 == newVersion){
+            db.execSQL("create table " + DbUserName + "(id integer primary key autoincrement, " +
+                    name + " varchar(20), " +
+                    phone + " varchar(11), " +
+                    time + " long, " +
+                    type + " int(1), " +
+                    content + " varchar) ");
 
+            Cursor cursor =  db.query(MyDBHelper.DbName, null, null, null, null, null, " time desc");
+
+            if (cursor == null || !cursor.moveToFirst()) {
+                return;
+            }
+
+            ArrayList<String> smsFathers = new ArrayList<>();
+
+            String phone = null;
+            String name = null;
+            String content = null;
+            long time;
+            do {
+
+                phone = cursor.getString(cursor.getColumnIndex(MyDBHelper.phone));
+
+                if (!smsFathers.contains(phone)){
+                    name = cursor.getString(cursor.getColumnIndex(MyDBHelper.name));
+                    content = cursor.getString(cursor.getColumnIndex(MyDBHelper.content));
+                    time = cursor.getLong(cursor.getColumnIndex(MyDBHelper.time));
+
+                    ContentValues values = new ContentValues();
+                    values.put(MyDBHelper.name, name);
+                    values.put(MyDBHelper.phone, phone);
+                    values.put(MyDBHelper.content, content);
+                    values.put(MyDBHelper.time, time);
+                    values.put(MyDBHelper.type, 2);
+
+                    db.insert(DbUserName, null, values);
+                }
+
+
+            } while (cursor.moveToNext());
+            cursor.close();//关闭掉游标,释放资源
+        }
     }
 }
