@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -20,11 +21,28 @@ public class SmsUserAdapter extends BaseAdapter {
 
     private Context mCon;
     private ArrayList<SmsFatherModel> smsBeans;
+    private boolean editModel;
 
     public SmsUserAdapter(Context mCon, ArrayList<SmsFatherModel> smsBeans){
         this.mCon = mCon;
         this.smsBeans = smsBeans;
     }
+
+    public void setEditModel(boolean edit){
+        this.editModel = edit;
+    }
+
+    public void notifyWithContentView(SmsFatherModel model, View convertView){
+        ViewHolder holder = (ViewHolder) convertView.getTag();
+        if (model.checked) {
+            holder.checkImg.setImageResource(R.mipmap.icon_check);
+            holder.parView.setBackgroundColor(mCon.getResources().getColor(R.color.color87CEFA_30));
+        } else {
+            holder.checkImg.setImageResource(R.mipmap.icon_uncheck);
+            holder.parView.setBackgroundColor(mCon.getResources().getColor(android.R.color.transparent));
+        }
+    }
+
 
     @Override
     public int getCount() {
@@ -49,6 +67,8 @@ public class SmsUserAdapter extends BaseAdapter {
         TextView content;       // 详细内容
         TextView time;       // 详细内容
         View readPoint;       // 是否已读
+        ImageView checkImg;
+        View parView;
     }
 
     @Override
@@ -61,6 +81,8 @@ public class SmsUserAdapter extends BaseAdapter {
             holder.content = ((TextView) convertView.findViewById(R.id.tv01));
             holder.time = ((TextView) convertView.findViewById(R.id.tv02));
             holder.readPoint = convertView.findViewById(R.id.view0);
+            holder.checkImg = convertView.findViewById(R.id.check);
+            holder.parView = convertView.findViewById(R.id.view1);
             convertView.setTag(holder);
         } else {
             holder = ((ViewHolder) convertView.getTag());
@@ -84,6 +106,21 @@ public class SmsUserAdapter extends BaseAdapter {
         holder.content.setText(model.getContent());
 
         holder.time.setText(model.getTime());
+
+        if (editModel) {
+            holder.checkImg.setVisibility(View.VISIBLE);
+            if (model.checked) {
+                holder.checkImg.setImageResource(R.mipmap.icon_check);
+                holder.parView.setBackgroundColor(mCon.getResources().getColor(R.color.color87CEFA_30));
+            } else {
+                holder.checkImg.setImageResource(R.mipmap.icon_uncheck);
+                holder.parView.setBackgroundColor(mCon.getResources().getColor(android.R.color.transparent));
+            }
+
+        } else {
+            holder.checkImg.setVisibility(View.INVISIBLE);
+            holder.parView.setBackgroundColor(mCon.getResources().getColor(android.R.color.transparent));
+        }
 
         return convertView;
     }

@@ -7,6 +7,8 @@ import java.util.ArrayList;
  */
 public class SmsFatherModel {
 
+    public boolean checked;
+
     private String name;        // 发件人姓名
 
     private String phone;        // 发件人姓名
@@ -16,6 +18,8 @@ public class SmsFatherModel {
     private String time;      // 时间
 
     private boolean isUnRead;   // 是否未读
+
+
 
     public String getName() {
         return name;

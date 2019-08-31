@@ -14,6 +14,8 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
@@ -37,6 +39,16 @@ public class MainActivity extends BaseActivity {
 
     private ArrayList<SmsFatherModel> allsms;
 
+    private ArrayList<String> secPhones;
+
+    private Menu curMenu;
+
+    private boolean editModel;
+
+    private View bomView;
+
+    private TextView bomLeftTv;
+
     private final String[] permissionsSMS = new String[]{
             Manifest.permission.RECEIVE_SMS};
     private ArrayList<String> permissionsList = new ArrayList<String>();
@@ -54,6 +66,49 @@ public class MainActivity extends BaseActivity {
     protected void onResume() {
         super.onResume();
         initData();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        curMenu = menu;
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_edit:
+                editModel = !editModel;
+                chanagToMode();
+                setAdapter();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void chanagToMode(){
+        if (curMenu == null){
+            return;
+        }
+        MenuItem item = curMenu.getItem(0);
+        if (editModel){
+            bomView.setVisibility(View.VISIBLE);
+            item.setTitle("完成");
+            if (secPhones == null){
+                secPhones = new ArrayList<>();
+            } else {
+                secPhones.clear();
+            }
+            bomLeftTv.setText("全部已读");
+        } else {
+            bomView.setVisibility(View.GONE);
+            item.setTitle("编辑");
+        }
     }
 
     private void initView(){
@@ -89,13 +144,30 @@ public class MainActivity extends BaseActivity {
 
                 SmsFatherModel smsFatherModel = allsms.get(position);
 
-                Intent intent = new Intent(MainActivity.this, SingleUserActivity.class);
 
-                intent.putExtra("phone", smsFatherModel.getPhone());
+                if (editModel){
+                    smsFatherModel.checked = !smsFatherModel.checked;
+                    setAdapterSingle(smsFatherModel,position);
+                    if (smsFatherModel.checked){
+                        secPhones.add(smsFatherModel.getPhone());
+                    } else {
+                        secPhones.remove(smsFatherModel.getPhone());
+                    }
+                    if (secPhones.size() == 0){
+                        bomLeftTv.setText("全部已读");
+                    } else {
+                        bomLeftTv.setText("删除");
+                    }
+                } else {
 
-                startActivity(intent);
+                    Intent intent = new Intent(MainActivity.this, SingleUserActivity.class);
 
-                new DataBaseHelper(MainActivity.this).updateRead(smsFatherModel.getPhone());
+                    intent.putExtra("phone", smsFatherModel.getPhone());
+
+                    startActivity(intent);
+
+                    new DataBaseHelper(MainActivity.this).updateRead(smsFatherModel.getPhone());
+                }
 
             }
         });
@@ -109,9 +181,16 @@ public class MainActivity extends BaseActivity {
 
         mListView.addFooterView(bomTv);
 
+        bomView = findViewById(R.id.view0);
+
+        bomLeftTv = bomView.findViewById(R.id.tv00);
+
+        bomLeftTv.setOnClickListener(clickListener);
     }
 
     private void initData(){
+        editModel = false;
+        chanagToMode();
         if (allsms == null){
             allsms = new ArrayList<>();
         } else {
@@ -130,11 +209,53 @@ public class MainActivity extends BaseActivity {
     public void setAdapter() {
         if (adapter == null){
             adapter = new SmsUserAdapter(this, allsms);
+            adapter.setEditModel(editModel);
             mListView.setAdapter(adapter);
         } else {
+            adapter.setEditModel(editModel);
             adapter.notifyDataSetChanged();
         }
     }
+
+
+    public void setAdapterSingle(SmsFatherModel model, int itemIndex) {
+        if (adapter == null){
+            adapter = new SmsUserAdapter(this, allsms);
+            adapter.setEditModel(editModel);
+            mListView.setAdapter(adapter);
+        } else {
+            // 得到第1个可显示控件的位置,记住是第1个可显示控件噢。而不是第1个控件
+            int visiblePosition = mListView.getFirstVisiblePosition();
+            // 得到你需要更新item的View
+            View convertView = mListView.getChildAt(itemIndex - visiblePosition);
+            if (convertView != null) {//此时被刷新行被隐藏
+                adapter.notifyWithContentView(model, convertView);
+            }
+
+        }
+    }
+
+    private View.OnClickListener clickListener = new View.OnClickListener() {
+
+        @Override
+        public void onClick(View v) {
+            switch (v.getId()){
+                case R.id.tv00:
+                    if (secPhones == null){
+                        return;
+                    }
+                    DataBaseHelper helper = new DataBaseHelper(MainActivity.this);
+                    if (0 == secPhones.size()){
+                        helper.updateReadAll();
+                        initData();
+                    } else {
+                        helper.deleteSmsWithPhones(secPhones);
+                        initData();
+                    }
+                    break;
+            }
+        }
+    };
 
     private void checkPermission() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {

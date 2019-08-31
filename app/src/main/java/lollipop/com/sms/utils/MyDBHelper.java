@@ -128,6 +128,8 @@ public class MyDBHelper extends SQLiteOpenHelper{
                     values.put(MyDBHelper.type, 2);
 
                     db.insert(DbUserName, null, values);
+
+                    smsFathers.add(phone);
                 }
 
 

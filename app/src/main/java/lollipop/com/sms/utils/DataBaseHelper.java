@@ -155,12 +155,43 @@ public class DataBaseHelper {
 //        return userModels;
 //    }
 
+    public void deleteSmsWithPhone(String phone) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        int result = db.delete(MyDBHelper.DbName, "phone=?", new String[]{phone});
+        if (result > 0) {
+            db.delete(MyDBHelper.DbUserName, "phone=?", new String[]{phone});
+        }
+        db.close();
+    }
+
+
+    public void deleteSmsWithPhones(ArrayList<String> phones) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+
+        for (String phone : phones){
+            int result = db.delete(MyDBHelper.DbName, "phone=?", new String[]{phone});
+            if (result > 0) {
+                db.delete(MyDBHelper.DbUserName, "phone=?", new String[]{phone});
+            }
+        }
+
+        db.close();
+    }
 
     public void updateRead(String phone){
         SQLiteDatabase db = helper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(MyDBHelper.type, 2);
         db.update(MyDBHelper.DbUserName,values,"phone=?", new String[]{phone});
+        db.close();
+    }
+
+
+    public void updateReadAll(){
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(MyDBHelper.type, 2);
+        db.update(MyDBHelper.DbUserName,values,null, null);
         db.close();
     }
 
